@@ -1,1 +1,8 @@
+de\todoapp\persistence\TaskWriter.class
 de\todoapp\Main.class
+de\todoapp\domain\Task.class
+de\todoapp\domain\TaskStatus.class
+de\todoapp\service\TaskService.class
+de\todoapp\persistence\InMemoryTaskRepository.class
+de\todoapp\presentation\ConsoleApp.class
+de\todoapp\service\TaskCommandService.class

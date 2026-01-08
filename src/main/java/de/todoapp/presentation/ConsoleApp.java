@@ -2,6 +2,7 @@ package de.todoapp.presentation;
 
 import de.todoapp.domain.Task;
 import de.todoapp.service.TaskCommandService;
+import de.todoapp.service.TaskQueryService;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
@@ -10,9 +11,11 @@ import java.util.Scanner;
 public class ConsoleApp {
 
     private final TaskCommandService taskCommandService;
+    private final TaskQueryService taskQueryService;
 
-    public ConsoleApp(TaskCommandService taskCommandService) {
+    public ConsoleApp(TaskCommandService taskCommandService, TaskQueryService taskQueryService) {
         this.taskCommandService = taskCommandService;
+        this.taskQueryService = taskQueryService;
     }
 
     public void run() {
@@ -22,6 +25,7 @@ public class ConsoleApp {
             System.out.println();
             System.out.println("=== ToDo App ===");
             System.out.println("1) Aufgabe anlegen");
+            System.out.println("2) Aufgaben anzeigen");
             System.out.println("0) Beenden");
             System.out.print("> ");
 
@@ -34,6 +38,8 @@ public class ConsoleApp {
 
             if ("1".equals(choice)) {
                 createTaskFlow(sc);
+            } else if ("2".equals(choice)) {
+                listTasksFlow();
             } else {
                 System.out.println("Unbekannte Eingabe.");
             }
@@ -64,6 +70,20 @@ public class ConsoleApp {
             System.out.println("✅ Aufgabe angelegt: #" + created.getId() + " " + created.getTitle());
         } catch (IllegalArgumentException e) {
             System.out.println("❌ Fehler: " + e.getMessage());
+        }
+    }
+
+    private void listTasksFlow() {
+        var tasks = taskQueryService.listTasks();
+        if (tasks.isEmpty()) {
+            System.out.println("Keine Aufgaben vorhanden.");
+            return;
+        }
+
+        System.out.println("=== Aufgabenliste ===");
+        for (var t : tasks) {
+            String due = (t.getDueDate() == null) ? "-" : t.getDueDate().toString();
+            System.out.println("#" + t.getId() + " [" + t.getStatus() + "] " + t.getTitle() + " (Due: " + due + ")");
         }
     }
 }

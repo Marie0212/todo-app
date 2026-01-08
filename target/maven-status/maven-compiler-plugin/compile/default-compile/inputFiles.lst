@@ -2,7 +2,9 @@ C:\Users\marim\OneDrive\Desktop\todo-liste\todo-app\src\main\java\de\todoapp\dom
 C:\Users\marim\OneDrive\Desktop\todo-liste\todo-app\src\main\java\de\todoapp\domain\TaskStatus.java
 C:\Users\marim\OneDrive\Desktop\todo-liste\todo-app\src\main\java\de\todoapp\Main.java
 C:\Users\marim\OneDrive\Desktop\todo-liste\todo-app\src\main\java\de\todoapp\persistence\InMemoryTaskRepository.java
+C:\Users\marim\OneDrive\Desktop\todo-liste\todo-app\src\main\java\de\todoapp\persistence\TaskReader.java
 C:\Users\marim\OneDrive\Desktop\todo-liste\todo-app\src\main\java\de\todoapp\persistence\TaskWriter.java
 C:\Users\marim\OneDrive\Desktop\todo-liste\todo-app\src\main\java\de\todoapp\presentation\ConsoleApp.java
 C:\Users\marim\OneDrive\Desktop\todo-liste\todo-app\src\main\java\de\todoapp\service\TaskCommandService.java
+C:\Users\marim\OneDrive\Desktop\todo-liste\todo-app\src\main\java\de\todoapp\service\TaskQueryService.java
 C:\Users\marim\OneDrive\Desktop\todo-liste\todo-app\src\main\java\de\todoapp\service\TaskService.java

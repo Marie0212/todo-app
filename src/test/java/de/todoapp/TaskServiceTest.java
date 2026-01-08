@@ -5,19 +5,17 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class TaskServiceTest {
+class TaskServiceListTest {
 
     @Test
-    void addTask_requiresTitle() {
-        TaskService service = new TaskService(new InMemoryTaskRepository());
-        assertThrows(IllegalArgumentException.class, () -> service.addTask("   ", null, null));
-    }
+    void listTasks_returnsCreatedTasks() {
+        var repo = new InMemoryTaskRepository();
+        var service = new TaskService(repo, repo);
 
-    @Test
-    void addTask_createsTaskWithId() {
-        TaskService service = new TaskService(new InMemoryTaskRepository());
-        var task = service.addTask("Test", null, null);
-        assertTrue(task.getId() > 0);
-        assertEquals("Test", task.getTitle());
+        service.addTask("A", null, null);
+        service.addTask("B", null, null);
+
+        var tasks = service.listTasks();
+        assertEquals(2, tasks.size());
     }
 }

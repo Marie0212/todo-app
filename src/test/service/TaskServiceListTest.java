@@ -10,7 +10,7 @@ class TaskServiceListTest {
     @Test
     void listTasks_returnsCreatedTasks() {
         var repo = new InMemoryTaskRepository();
-        var service = new TaskService(repo, repo);
+        var service = new TaskService(repo, repo, repo);
 
         service.addTask("A", null, null);
         service.addTask("B", null, null);

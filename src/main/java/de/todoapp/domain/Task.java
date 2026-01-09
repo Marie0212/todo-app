@@ -26,4 +26,8 @@ public class Task {
     public String getDescription() { return description; }
     public LocalDate getDueDate() { return dueDate; }
     public TaskStatus getStatus() { return status; }
+
+    public Task withStatus(TaskStatus newStatus) {
+        return new Task(this.id, this.title, this.description, this.dueDate, newStatus);
+    }
 }

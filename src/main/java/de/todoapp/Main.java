@@ -7,9 +7,7 @@ import de.todoapp.service.TaskService;
 public class Main {
     public static void main(String[] args) {
         var repo = new InMemoryTaskRepository();
-
-        var service = new TaskService(repo, repo); // repo ist Writer + Reader
-
+        var service = new TaskService(repo, repo, repo);
         var app = new ConsoleApp(service, service);
         app.run();
     }

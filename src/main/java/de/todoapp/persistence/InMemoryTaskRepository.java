@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class InMemoryTaskRepository implements TaskWriter, TaskReader, TaskUpdater {
+public class InMemoryTaskRepository implements TaskWriter, TaskReader, TaskUpdater, TaskDeleter {
 
     private final Map<Long, Task> store = new ConcurrentHashMap<>();
 
@@ -30,5 +30,10 @@ public class InMemoryTaskRepository implements TaskWriter, TaskReader, TaskUpdat
         }
         store.put(task.getId(), task);
         return Optional.of(task);
+    }
+
+    @Override
+    public Optional<Long> deleteById(long id) {
+        return (store.remove(id) != null) ? Optional.of(id) : Optional.empty();
     }
 }

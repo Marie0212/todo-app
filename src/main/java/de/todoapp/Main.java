@@ -3,8 +3,12 @@ package de.todoapp;
 import de.todoapp.persistence.InMemoryCategoryRepository;
 import de.todoapp.persistence.InMemoryTaskRepository;
 import de.todoapp.presentation.ConsoleApp;
+import de.todoapp.presentation.ConsoleInput;
+import de.todoapp.presentation.ConsoleOutput;
 import de.todoapp.service.CategoryService;
 import de.todoapp.service.TaskService;
+
+import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) {
@@ -14,7 +18,10 @@ public class Main {
         var categoryRepo = new InMemoryCategoryRepository();
         var categoryService = new CategoryService(categoryRepo, categoryRepo);
 
-        var app = new ConsoleApp(taskService, taskService, categoryService, categoryService);
+        var in = new ConsoleInput(new Scanner(System.in));
+        var out = new ConsoleOutput();
+
+        var app = new ConsoleApp(taskService, taskService, categoryService, categoryService, in, out);
         app.run();
     }
 }

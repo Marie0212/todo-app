@@ -1,6 +1,8 @@
 package de.todoapp.presentation;
 
 import de.todoapp.domain.Task;
+import de.todoapp.service.CategoryCommandService;
+import de.todoapp.service.CategoryQueryService;
 import de.todoapp.service.TaskCommandService;
 import de.todoapp.service.TaskQueryService;
 
@@ -12,10 +14,19 @@ public class ConsoleApp {
 
     private final TaskCommandService taskCommandService;
     private final TaskQueryService taskQueryService;
+    private final CategoryCommandService categoryCommandService;
+    private final CategoryQueryService categoryQueryService;
 
-    public ConsoleApp(TaskCommandService taskCommandService, TaskQueryService taskQueryService) {
+    public ConsoleApp(
+            TaskCommandService taskCommandService,
+            TaskQueryService taskQueryService,
+            CategoryCommandService categoryCommandService,
+            CategoryQueryService categoryQueryService
+    ) {
         this.taskCommandService = taskCommandService;
         this.taskQueryService = taskQueryService;
+        this.categoryCommandService = categoryCommandService;
+        this.categoryQueryService = categoryQueryService;
     }
 
     public void run() {
@@ -28,6 +39,8 @@ public class ConsoleApp {
             System.out.println("2) Aufgaben anzeigen");
             System.out.println("3) Aufgabe erledigen");
             System.out.println("4) Aufgabe löschen");
+            System.out.println("5) Kategorie anlegen");
+            System.out.println("6) Kategorien anzeigen");
             System.out.println("0) Beenden");
             System.out.print("> ");
 
@@ -38,16 +51,14 @@ public class ConsoleApp {
                 return;
             }
 
-            if ("1".equals(choice)) {
-                createTaskFlow(sc);
-            } else if ("2".equals(choice)) {
-                listTasksFlow();
-            } else if ("3".equals(choice)) {
-                markDoneFlow(sc);
-            } else if ("4".equals(choice)) {
-                deleteTaskFlow(sc);
-            } else {
-                System.out.println("Unbekannte Eingabe.");
+            switch (choice) {
+                case "1" -> createTaskFlow(sc);
+                case "2" -> listTasksFlow();
+                case "3" -> markDoneFlow(sc);
+                case "4" -> deleteTaskFlow(sc);
+                case "5" -> createCategoryFlow(sc);
+                case "6" -> listCategoriesFlow();
+                default -> System.out.println("Unbekannte Eingabe.");
             }
         }
     }
@@ -120,6 +131,31 @@ public class ConsoleApp {
             System.out.println("❌ Ungültige Zahl.");
         } catch (Exception e) {
             System.out.println("❌ Fehler: " + e.getMessage());
+        }
+    }
+
+    private void createCategoryFlow(Scanner sc) {
+        System.out.print("Kategorie-Name (Pflicht): ");
+        String name = sc.nextLine();
+
+        try {
+            var created = categoryCommandService.addCategory(name);
+            System.out.println("✅ Kategorie angelegt: #" + created.getId() + " " + created.getName());
+        } catch (IllegalArgumentException e) {
+            System.out.println("❌ Fehler: " + e.getMessage());
+        }
+    }
+
+    private void listCategoriesFlow() {
+        var categories = categoryQueryService.listCategories();
+        if (categories.isEmpty()) {
+            System.out.println("Keine Kategorien vorhanden.");
+            return;
+        }
+
+        System.out.println("=== Kategorien ===");
+        for (var c : categories) {
+            System.out.println("#" + c.getId() + " " + c.getName());
         }
     }
 }

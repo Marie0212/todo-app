@@ -2,6 +2,7 @@
 /Users/mohammedalialadani/todo-app/src/main/java/de/todoapp/domain/Task.java
 /Users/mohammedalialadani/todo-app/src/main/java/de/todoapp/domain/TaskStatus.java
 /Users/mohammedalialadani/todo-app/src/main/java/de/todoapp/persistence/InMemoryTaskRepository.java
+/Users/mohammedalialadani/todo-app/src/main/java/de/todoapp/persistence/TaskDeleter.java
 /Users/mohammedalialadani/todo-app/src/main/java/de/todoapp/persistence/TaskReader.java
 /Users/mohammedalialadani/todo-app/src/main/java/de/todoapp/persistence/TaskUpdater.java
 /Users/mohammedalialadani/todo-app/src/main/java/de/todoapp/persistence/TaskWriter.java

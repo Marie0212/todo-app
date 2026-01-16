@@ -5,6 +5,7 @@ de/todoapp/presentation/ConsoleApp.class
 de/todoapp/persistence/TaskWriter.class
 de/todoapp/persistence/TaskUpdater.class
 de/todoapp/service/TaskCommandService.class
+de/todoapp/persistence/TaskDeleter.class
 de/todoapp/persistence/TaskReader.class
 de/todoapp/persistence/InMemoryTaskRepository.class
 de/todoapp/service/TaskService.class

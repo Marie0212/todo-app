@@ -36,7 +36,6 @@ public class SqliteTaskRepository implements TaskWriter, TaskReader, TaskUpdater
     @Override
     public Optional<Long> deleteById(long id) {
         // TODO US-07: delete from SQLite
-        // return Optional.of(id) wenn gelöscht, sonst Optional.empty()
         return Optional.empty();
     }
 

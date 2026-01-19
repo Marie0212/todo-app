@@ -1,8 +1,10 @@
 package de.todoapp;
 
+import de.todoapp.persistence.InMemoryCategoryRepository;
 import de.todoapp.persistence.SqliteDatabase;
 import de.todoapp.persistence.SqliteTaskRepository;
 import de.todoapp.presentation.ConsoleApp;
+import de.todoapp.service.CategoryService;
 import de.todoapp.service.TaskService;
 
 public class Main {
@@ -10,9 +12,14 @@ public class Main {
         var db = new SqliteDatabase("jdbc:sqlite:data/todo.db");
         db.initSchema();
 
-        var repo = new SqliteTaskRepository(db);
-        var service = new TaskService(repo, repo, repo);
+        var taskRepo = new SqliteTaskRepository(db);
 
-        new ConsoleApp(service, service).run();
+        // Categories erstmal InMemory (US-07 betrifft Tasks/SQLite)
+        var categoryRepo = new InMemoryCategoryRepository();
+
+        var taskService = new TaskService(taskRepo, taskRepo, taskRepo, taskRepo);
+        var categoryService = new CategoryService(categoryRepo, categoryRepo);
+
+        new ConsoleApp(taskService, taskService, categoryService, categoryService).run();
     }
 }

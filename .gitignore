@@ -2,3 +2,7 @@
 .idea/
 *.iml
 .DS_Store
+
+# SQLite DB
+data/todo.db
+

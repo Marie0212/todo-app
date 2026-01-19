@@ -1,4 +1,4 @@
-﻿package de.todoapp;
+package de.todoapp;
 
 import de.todoapp.persistence.SqliteDatabase;
 import de.todoapp.persistence.SqliteTaskRepository;

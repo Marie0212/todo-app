@@ -1,4 +1,4 @@
-﻿package de.todoapp.persistence;
+package de.todoapp.persistence;
 
 import de.todoapp.domain.Task;
 import de.todoapp.domain.TaskStatus;

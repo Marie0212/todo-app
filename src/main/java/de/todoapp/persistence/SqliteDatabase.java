@@ -1,4 +1,4 @@
-﻿package de.todoapp.persistence;
+package de.todoapp.persistence;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;

@@ -2,15 +2,28 @@ package de.todoapp.presentation;
 
 import java.util.Scanner;
 
-public class ConsoleInput implements Input {
-    private final Scanner scanner;
+public class ConsoleInput {
 
-    public ConsoleInput(Scanner scanner) {
-        this.scanner = scanner;
-    }
+    private final Scanner scanner = new Scanner(System.in);
 
-    @Override
     public String readLine() {
         return scanner.nextLine();
+    }
+
+    public String readLine(String prompt) {
+        if (prompt != null && !prompt.isBlank()) {
+            System.out.print(prompt);
+        }
+        return scanner.nextLine();
+    }
+
+    public int readInt(String prompt) {
+        while (true) {
+            try {
+                return Integer.parseInt(readLine(prompt).trim());
+            } catch (NumberFormatException e) {
+                System.out.println("Ungültige Zahl.");
+            }
+        }
     }
 }

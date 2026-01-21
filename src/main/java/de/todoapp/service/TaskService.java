@@ -9,8 +9,7 @@ import de.todoapp.persistence.TaskWriter;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.Optional;
 
 public class TaskService implements TaskCommandService, TaskQueryService {
 
@@ -18,8 +17,6 @@ public class TaskService implements TaskCommandService, TaskQueryService {
     private final TaskReader taskReader;
     private final TaskUpdater taskUpdater;
     private final TaskDeleter taskDeleter;
-
-    private final AtomicLong idSeq = new AtomicLong(0);
 
     public TaskService(TaskWriter taskWriter, TaskReader taskReader, TaskUpdater taskUpdater, TaskDeleter taskDeleter) {
         this.taskWriter = taskWriter;
@@ -30,9 +27,27 @@ public class TaskService implements TaskCommandService, TaskQueryService {
 
     @Override
     public Task addTask(String title, String description, LocalDate dueDate) {
-        long id = idSeq.incrementAndGet();
-        Task task = new Task(id, title, description, dueDate, TaskStatus.OPEN);
+        // Wenn du irgendwo anders ID generierst, lass es so wie bei dir.
+        // Hier als fallback: maxId+1
+        long nextId = taskReader.findAll().stream().mapToLong(Task::getId).max().orElse(0L) + 1;
+        Task task = new Task(nextId, title, description, dueDate, TaskStatus.OPEN, null);
         return taskWriter.save(task);
+    }
+
+    @Override
+    public void markDone(long id) {
+        Task existing = taskReader.findAll().stream()
+                .filter(t -> t.getId() == id)
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Task not found: " + id));
+
+        taskUpdater.update(existing.withStatus(TaskStatus.DONE))
+                .orElseThrow(() -> new IllegalArgumentException("Task not found: " + id));
+    }
+
+    @Override
+    public Optional<Long> deleteById(long id) {
+        return taskDeleter.deleteById(id);
     }
 
     @Override
@@ -41,21 +56,10 @@ public class TaskService implements TaskCommandService, TaskQueryService {
     }
 
     @Override
-    public void markDone(long id) {
-        var existing = taskReader.findAll().stream()
-                .filter(t -> t.getId() == id)
-                .findFirst()
-                .orElseThrow(() -> new NoSuchElementException("Task not found: " + id));
-
-        var updated = existing.withStatus(TaskStatus.DONE);
-
-        taskUpdater.update(updated)
-                .orElseThrow(() -> new IllegalStateException("Could not update task: " + id));
-    }
-
-    @Override
-    public void deleteTask(long id) {
-        taskDeleter.deleteById(id)
-                .orElseThrow(() -> new NoSuchElementException("Task not found: " + id));
+    public List<Task> listTasksFiltered(TaskStatus status, String category) {
+        return taskReader.findAll().stream()
+                .filter(t -> status == null || t.getStatus() == status)
+                .filter(t -> category == null || category.isBlank() || (t.getCategory() != null && t.getCategory().equalsIgnoreCase(category.trim())))
+                .toList();
     }
 }

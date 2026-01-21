@@ -5,3 +5,4 @@ target/
 
 # SQLite DB
 data/todo.db
+.vscode/

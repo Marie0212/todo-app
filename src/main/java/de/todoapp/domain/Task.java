@@ -42,4 +42,11 @@ public class Task {
     public Task withCategory(String newCategory) {
         return new Task(this.id, this.title, this.description, this.dueDate, this.status, newCategory);
     }
+
+    public boolean isOverdue() {
+        return status != TaskStatus.DONE
+                && dueDate != null
+                && dueDate.isBefore(java.time.LocalDate.now());
+    }
+
 }

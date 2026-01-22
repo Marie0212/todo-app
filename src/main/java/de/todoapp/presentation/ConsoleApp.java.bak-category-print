@@ -20,12 +20,10 @@ public class ConsoleApp {
     private final CategoryCommandService categoryCommandService;
     private final CategoryQueryService categoryQueryService;
 
-    public ConsoleApp(
-            TaskCommandService taskCommandService,
-            TaskQueryService taskQueryService,
-            CategoryCommandService categoryCommandService,
-            CategoryQueryService categoryQueryService
-    ) {
+    public ConsoleApp(TaskCommandService taskCommandService,
+                      TaskQueryService taskQueryService,
+                      CategoryCommandService categoryCommandService,
+                      CategoryQueryService categoryQueryService) {
         this.taskCommandService = taskCommandService;
         this.taskQueryService = taskQueryService;
         this.categoryCommandService = categoryCommandService;
@@ -56,17 +54,15 @@ public class ConsoleApp {
 
             switch (choice) {
                 case "1" -> createTaskFlow(sc);
-                case "2" -> listTasksFlow(sc);      // US-09 + US-10
-                case "3" -> markDoneFlow(sc);       // US-03
-                case "4" -> deleteTaskFlow(sc);     // US-04
+                case "2" -> listTasksFlow(sc);   // US-09 Filter
+                case "3" -> markDoneFlow(sc);
+                case "4" -> deleteTaskFlow(sc);
                 case "5" -> createCategoryFlow(sc); // US-05
                 case "6" -> listCategoriesFlow();   // US-05
                 default -> System.out.println("Unbekannte Eingabe.");
             }
         }
     }
-
-    /* ================= TASKS ================= */
 
     private void createTaskFlow(Scanner sc) {
         System.out.print("Titel (Pflicht): ");
@@ -105,7 +101,6 @@ public class ConsoleApp {
         if (filter.equals("j") || filter.equals("y")) {
             System.out.print("Status (OPEN/DONE oder leer): ");
             String statusRaw = sc.nextLine().trim();
-
             if (!statusRaw.isEmpty()) {
                 try {
                     status = TaskStatus.valueOf(statusRaw.toUpperCase());
@@ -132,17 +127,8 @@ public class ConsoleApp {
         for (Task t : tasks) {
             String due = (t.getDueDate() == null) ? "-" : t.getDueDate().toString();
             String cat = (t.getCategory() == null) ? "-" : t.getCategory();
-
-            // ✅ US-10: OVERDUE-Markierung
-            String overdue = t.isOverdue() ? " ⚠ OVERDUE" : "";
-
-            System.out.println(
-                    "#" + t.getId() +
-                    " [" + t.getStatus() + "] " +
-                    t.getTitle() +
-                    " (Due: " + due + ", Category: " + cat + ")" +
-                    overdue
-            );
+            System.out.println("#" + t.getId() + " [" + t.getStatus() + "] " + t.getTitle()
+                    + " (Due: " + due + ", Category: " + cat + ")");
         }
     }
 
@@ -176,31 +162,37 @@ public class ConsoleApp {
         }
     }
 
-    /* ================= CATEGORIES ================= */
-
     private void createCategoryFlow(Scanner sc) {
         System.out.print("Kategorie-Name (Pflicht): ");
         String name = sc.nextLine();
 
         try {
             Category created = categoryCommandService.addCategory(name);
-            System.out.println("📁 Kategorie angelegt: #" + created.getId() + " " + created.getName());
+            // wir kennen die Felder nicht sicher -> wir drucken robust:
+            System.out.println("✅ Kategorie angelegt: " + safeCategoryPrint(created));
         } catch (IllegalArgumentException e) {
+            System.out.println("❌ Fehler: " + e.getMessage());
+        } catch (Exception e) {
             System.out.println("❌ Fehler: " + e.getMessage());
         }
     }
 
     private void listCategoriesFlow() {
-        List<Category> categories = categoryQueryService.listCategories();
-
-        if (categories.isEmpty()) {
+        List<Category> cats = categoryQueryService.listCategories();
+        if (cats == null || cats.isEmpty()) {
             System.out.println("Keine Kategorien vorhanden.");
             return;
         }
 
         System.out.println("=== Kategorien ===");
-        for (Category c : categories) {
-            System.out.println("#" + c.getId() + " " + c.getName());
+        for (Category c : cats) {
+            System.out.println("- " + safeCategoryPrint(c));
         }
+    }
+
+    private String safeCategoryPrint(Category c) {
+        if (c == null) return "<null>";
+        // Falls Category toString() sauber ist, reicht das:
+        return c.toString();
     }
 }

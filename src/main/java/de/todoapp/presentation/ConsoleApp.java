@@ -1,11 +1,16 @@
 package de.todoapp.presentation;
 
+import de.todoapp.domain.Category;
+import de.todoapp.domain.Task;
 import de.todoapp.domain.TaskStatus;
 import de.todoapp.service.CategoryCommandService;
 import de.todoapp.service.CategoryQueryService;
 import de.todoapp.service.TaskCommandService;
 import de.todoapp.service.TaskQueryService;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
+import java.util.List;
 import java.util.Scanner;
 
 public class ConsoleApp {
@@ -15,10 +20,12 @@ public class ConsoleApp {
     private final CategoryCommandService categoryCommandService;
     private final CategoryQueryService categoryQueryService;
 
-    public ConsoleApp(TaskCommandService taskCommandService,
-                      TaskQueryService taskQueryService,
-                      CategoryCommandService categoryCommandService,
-                      CategoryQueryService categoryQueryService) {
+    public ConsoleApp(
+            TaskCommandService taskCommandService,
+            TaskQueryService taskQueryService,
+            CategoryCommandService categoryCommandService,
+            CategoryQueryService categoryQueryService
+    ) {
         this.taskCommandService = taskCommandService;
         this.taskQueryService = taskQueryService;
         this.categoryCommandService = categoryCommandService;
@@ -34,6 +41,9 @@ public class ConsoleApp {
             System.out.println("1) Aufgabe anlegen");
             System.out.println("2) Aufgaben anzeigen");
             System.out.println("3) Aufgabe erledigen");
+            System.out.println("4) Aufgabe löschen");
+            System.out.println("5) Kategorie anlegen");
+            System.out.println("6) Kategorien anzeigen");
             System.out.println("0) Beenden");
             System.out.print("> ");
 
@@ -44,21 +54,45 @@ public class ConsoleApp {
                 return;
             }
 
-            if ("1".equals(choice)) {
-                createTaskFlow(sc);
-            } else if ("2".equals(choice)) {
-                listTasksFlow(sc);
-            } else if ("3".equals(choice)) {
-                markDoneFlow(sc);
-            } else {
-                System.out.println("Unbekannte Eingabe.");
+            switch (choice) {
+                case "1" -> createTaskFlow(sc);
+                case "2" -> listTasksFlow(sc);      // US-09 + US-10
+                case "3" -> markDoneFlow(sc);       // US-03
+                case "4" -> deleteTaskFlow(sc);     // US-04
+                case "5" -> createCategoryFlow(sc); // US-05
+                case "6" -> listCategoriesFlow();   // US-05
+                default -> System.out.println("Unbekannte Eingabe.");
             }
         }
     }
 
+    /* ================= TASKS ================= */
+
     private void createTaskFlow(Scanner sc) {
-        System.out.println("Create Task ist hier unverändert (US-06).");
-        System.out.println("Wenn du willst, erweitern wir das später um Kategorie-Eingabe.");
+        System.out.print("Titel (Pflicht): ");
+        String title = sc.nextLine();
+
+        System.out.print("Beschreibung (optional): ");
+        String description = sc.nextLine();
+
+        System.out.print("Faelligkeitsdatum (optional, YYYY-MM-DD): ");
+        String dueRaw = sc.nextLine().trim();
+
+        LocalDate dueDate = null;
+        if (!dueRaw.isEmpty()) {
+            try {
+                dueDate = LocalDate.parse(dueRaw);
+            } catch (DateTimeParseException e) {
+                System.out.println("Ungültiges Datum. Wird ignoriert.");
+            }
+        }
+
+        try {
+            Task created = taskCommandService.addTask(title, description, dueDate);
+            System.out.println("✅ Aufgabe angelegt: #" + created.getId() + " " + created.getTitle());
+        } catch (IllegalArgumentException e) {
+            System.out.println("❌ Fehler: " + e.getMessage());
+        }
     }
 
     private void listTasksFlow(Scanner sc) {
@@ -69,7 +103,7 @@ public class ConsoleApp {
         String category = null;
 
         if (filter.equals("j") || filter.equals("y")) {
-            System.out.print("Status (OPEN/DONE oder leer):_toggle): ");
+            System.out.print("Status (OPEN/DONE oder leer): ");
             String statusRaw = sc.nextLine().trim();
 
             if (!statusRaw.isEmpty()) {
@@ -85,7 +119,7 @@ public class ConsoleApp {
             if (category.isEmpty()) category = null;
         }
 
-        var tasks = (status == null && category == null)
+        List<Task> tasks = (status == null && category == null)
                 ? taskQueryService.listTasks()
                 : taskQueryService.listTasksFiltered(status, category);
 
@@ -95,9 +129,20 @@ public class ConsoleApp {
         }
 
         System.out.println("=== Aufgabenliste ===");
-        for (var t : tasks) {
-            System.out.println("#" + t.getId() + " [" + t.getStatus() + "] " + t.getTitle()
-                    + (t.getCategory() == null ? "" : " (Cat: " + t.getCategory() + ")"));
+        for (Task t : tasks) {
+            String due = (t.getDueDate() == null) ? "-" : t.getDueDate().toString();
+            String cat = (t.getCategory() == null) ? "-" : t.getCategory();
+
+            // ✅ US-10: OVERDUE-Markierung
+            String overdue = t.isOverdue() ? " ⚠ OVERDUE" : "";
+
+            System.out.println(
+                    "#" + t.getId() +
+                    " [" + t.getStatus() + "] " +
+                    t.getTitle() +
+                    " (Due: " + due + ", Category: " + cat + ")" +
+                    overdue
+            );
         }
     }
 
@@ -113,6 +158,49 @@ public class ConsoleApp {
             System.out.println("❌ Ungültige Zahl.");
         } catch (Exception e) {
             System.out.println("❌ Fehler: " + e.getMessage());
+        }
+    }
+
+    private void deleteTaskFlow(Scanner sc) {
+        System.out.print("Welche ID soll gelöscht werden? ");
+        String raw = sc.nextLine().trim();
+
+        try {
+            long id = Long.parseLong(raw);
+            taskCommandService.deleteTask(id);
+            System.out.println("🗑️ Aufgabe #" + id + " gelöscht.");
+        } catch (NumberFormatException e) {
+            System.out.println("❌ Ungültige Zahl.");
+        } catch (Exception e) {
+            System.out.println("❌ Fehler: " + e.getMessage());
+        }
+    }
+
+    /* ================= CATEGORIES ================= */
+
+    private void createCategoryFlow(Scanner sc) {
+        System.out.print("Kategorie-Name (Pflicht): ");
+        String name = sc.nextLine();
+
+        try {
+            Category created = categoryCommandService.addCategory(name);
+            System.out.println("📁 Kategorie angelegt: #" + created.getId() + " " + created.getName());
+        } catch (IllegalArgumentException e) {
+            System.out.println("❌ Fehler: " + e.getMessage());
+        }
+    }
+
+    private void listCategoriesFlow() {
+        List<Category> categories = categoryQueryService.listCategories();
+
+        if (categories.isEmpty()) {
+            System.out.println("Keine Kategorien vorhanden.");
+            return;
+        }
+
+        System.out.println("=== Kategorien ===");
+        for (Category c : categories) {
+            System.out.println("#" + c.getId() + " " + c.getName());
         }
     }
 }

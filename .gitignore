@@ -1,0 +1,8 @@
+﻿target/
+.idea/
+.vscode/
+*.iml
+.DS_Store
+
+# SQLite DB
+data/todo.db

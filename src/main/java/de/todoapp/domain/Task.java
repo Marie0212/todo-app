@@ -9,9 +9,9 @@ public class Task {
     private final String description;
     private final LocalDate dueDate;
     private final TaskStatus status;
-    private final Long categoryId; // optional
+    private final String category; // optional
 
-    public Task(long id, String title, String description, LocalDate dueDate, TaskStatus status, Long categoryId) {
+    public Task(long id, String title, String description, LocalDate dueDate, TaskStatus status, String category) {
         if (title == null || title.trim().isEmpty()) {
             throw new IllegalArgumentException("title must not be empty");
         }
@@ -20,10 +20,10 @@ public class Task {
         this.description = (description == null || description.isBlank()) ? null : description.trim();
         this.dueDate = dueDate;
         this.status = Objects.requireNonNullElse(status, TaskStatus.OPEN);
-        this.categoryId = categoryId;
+        this.category = (category == null || category.isBlank()) ? null : category.trim();
     }
 
-    // Backward compatible constructor (falls du noch alt aufrufst)
+    // Backward-compatible constructor (falls andere Stellen noch den alten Konstruktor nutzen)
     public Task(long id, String title, String description, LocalDate dueDate, TaskStatus status) {
         this(id, title, description, dueDate, status, null);
     }
@@ -33,13 +33,20 @@ public class Task {
     public String getDescription() { return description; }
     public LocalDate getDueDate() { return dueDate; }
     public TaskStatus getStatus() { return status; }
-    public Long getCategoryId() { return categoryId; }
+    public String getCategory() { return category; }
 
     public Task withStatus(TaskStatus newStatus) {
-        return new Task(this.id, this.title, this.description, this.dueDate, newStatus, this.categoryId);
+        return new Task(this.id, this.title, this.description, this.dueDate, newStatus, this.category);
     }
 
-    public Task withCategoryId(Long newCategoryId) {
-        return new Task(this.id, this.title, this.description, this.dueDate, this.status, newCategoryId);
+    public Task withCategory(String newCategory) {
+        return new Task(this.id, this.title, this.description, this.dueDate, this.status, newCategory);
     }
+
+    public boolean isOverdue() {
+        return status != TaskStatus.DONE
+                && dueDate != null
+                && dueDate.isBefore(java.time.LocalDate.now());
+    }
+
 }

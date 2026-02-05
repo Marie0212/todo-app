@@ -1,1 +1,6 @@
 target/
+.idea/
+*.iml
+.DS_Store
+.vscode/
+data/todo.db

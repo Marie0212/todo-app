@@ -8,7 +8,6 @@ import de.todoapp.service.TaskService;
 
 public class Main {
     public static void main(String[] args) {
-
         var taskRepo = new SQLiteTaskRepository("jdbc:sqlite:data/todo.db");
         var taskService = new TaskService(taskRepo, taskRepo, taskRepo, taskRepo);
 

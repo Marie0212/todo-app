@@ -1,6 +1,8 @@
 package de.todoapp.presentation;
 
+import de.todoapp.domain.Category;
 import de.todoapp.domain.Task;
+import de.todoapp.domain.TaskStatus;
 import de.todoapp.service.CategoryCommandService;
 import de.todoapp.service.CategoryQueryService;
 import de.todoapp.service.TaskCommandService;
@@ -8,6 +10,7 @@ import de.todoapp.service.TaskQueryService;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
+import java.util.List;
 import java.util.Scanner;
 
 public class ConsoleApp {
@@ -53,15 +56,17 @@ public class ConsoleApp {
 
             switch (choice) {
                 case "1" -> createTaskFlow(sc);
-                case "2" -> listTasksFlow();
-                case "3" -> markDoneFlow(sc);
-                case "4" -> deleteTaskFlow(sc);
-                case "5" -> createCategoryFlow(sc);
-                case "6" -> listCategoriesFlow();
+                case "2" -> listTasksFlow(sc);      // US-09 + US-10
+                case "3" -> markDoneFlow(sc);       // US-03
+                case "4" -> deleteTaskFlow(sc);     // US-04
+                case "5" -> createCategoryFlow(sc); // US-05
+                case "6" -> listCategoriesFlow();   // US-05
                 default -> System.out.println("Unbekannte Eingabe.");
             }
         }
     }
+
+    /* ================= TASKS ================= */
 
     private void createTaskFlow(Scanner sc) {
         System.out.print("Titel (Pflicht): ");
@@ -90,19 +95,60 @@ public class ConsoleApp {
         }
     }
 
-    private void listTasksFlow() {
-        var tasks = taskQueryService.listTasks();
+    private void listTasksFlow(Scanner sc) {
+        System.out.print("Filtern? (j/n): ");
+        String filter = sc.nextLine().trim().toLowerCase();
+
+        TaskStatus status = null;
+        String category = null;
+
+        if (filter.equals("j") || filter.equals("y")) {
+            System.out.print("Status (OPEN/DONE oder leer): ");
+            String statusRaw = sc.nextLine().trim();
+
+            if (!statusRaw.isEmpty()) {
+                try {
+                    status = TaskStatus.valueOf(statusRaw.toUpperCase());
+                } catch (IllegalArgumentException e) {
+                    System.out.println("Ungültiger Status. Wird ignoriert.");
+                }
+            }
+
+            System.out.print("Kategorie (Name oder leer): ");
+            category = sc.nextLine().trim();
+            if (category.isEmpty()) category = null;
+        }
+
+        List<Task> tasks = (status == null && category == null)
+                ? taskQueryService.listTasks()
+                : taskQueryService.listTasksFiltered(status, category);
+
         if (tasks.isEmpty()) {
             System.out.println("Keine Aufgaben vorhanden.");
             return;
         }
 
         System.out.println("=== Aufgabenliste ===");
-        for (var t : tasks) {
+        for (Task t : tasks) {
             String due = (t.getDueDate() == null) ? "-" : t.getDueDate().toString();
+<<<<<<< HEAD
             String cat = (t.getCategoryId() == null) ? "-" : t.getCategoryId().toString();
             System.out.println("#" + t.getId() + " [" + t.getStatus() + "] " + t.getTitle()
                     + " (Due: " + due + ", CategoryId: " + cat + ")");
+=======
+            String cat = (t.getCategory() == null) ? "-" : t.getCategory();
+
+            // ✅ US-10: OVERDUE-Markierung
+            String overdue = t.isOverdue() ? " ⚠ OVERDUE" : "";
+
+            System.out.println(
+                    "#" + t.getId() +
+                    " [" + t.getStatus() + "] " +
+                    t.getTitle() +
+                    " (Due: " + due + ", Category: " + cat + ")" +
+                    overdue
+            );
+>>>>>>> origin/main
         }
     }
 
@@ -136,27 +182,30 @@ public class ConsoleApp {
         }
     }
 
+    /* ================= CATEGORIES ================= */
+
     private void createCategoryFlow(Scanner sc) {
         System.out.print("Kategorie-Name (Pflicht): ");
         String name = sc.nextLine();
 
         try {
-            var created = categoryCommandService.addCategory(name);
-            System.out.println("✅ Kategorie angelegt: #" + created.getId() + " " + created.getName());
+            Category created = categoryCommandService.addCategory(name);
+            System.out.println("📁 Kategorie angelegt: #" + created.getId() + " " + created.getName());
         } catch (IllegalArgumentException e) {
             System.out.println("❌ Fehler: " + e.getMessage());
         }
     }
 
     private void listCategoriesFlow() {
-        var categories = categoryQueryService.listCategories();
+        List<Category> categories = categoryQueryService.listCategories();
+
         if (categories.isEmpty()) {
             System.out.println("Keine Kategorien vorhanden.");
             return;
         }
 
         System.out.println("=== Kategorien ===");
-        for (var c : categories) {
+        for (Category c : categories) {
             System.out.println("#" + c.getId() + " " + c.getName());
         }
     }

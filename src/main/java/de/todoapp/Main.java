@@ -1,14 +1,15 @@
 package de.todoapp;
 
 import de.todoapp.persistence.InMemoryCategoryRepository;
-import de.todoapp.persistence.InMemoryTaskRepository;
+import de.todoapp.persistence.SQLiteTaskRepository;
 import de.todoapp.presentation.ConsoleApp;
 import de.todoapp.service.CategoryService;
 import de.todoapp.service.TaskService;
 
 public class Main {
     public static void main(String[] args) {
-        var taskRepo = new InMemoryTaskRepository();
+
+        var taskRepo = new SQLiteTaskRepository("jdbc:sqlite:data/todo.db");
         var taskService = new TaskService(taskRepo, taskRepo, taskRepo, taskRepo);
 
         var categoryRepo = new InMemoryCategoryRepository();

@@ -1,6 +1,7 @@
 de/todoapp/Main.class
 de/todoapp/domain/TaskStatus.class
 de/todoapp/persistence/InMemoryCategoryRepository.class
+de/todoapp/persistence/SQLiteTaskRepository.class
 de/todoapp/domain/Category.class
 de/todoapp/service/CategoryQueryService.class
 de/todoapp/persistence/CategoryReader.class

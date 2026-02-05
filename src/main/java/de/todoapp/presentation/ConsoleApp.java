@@ -100,7 +100,9 @@ public class ConsoleApp {
         System.out.println("=== Aufgabenliste ===");
         for (var t : tasks) {
             String due = (t.getDueDate() == null) ? "-" : t.getDueDate().toString();
-            System.out.println("#" + t.getId() + " [" + t.getStatus() + "] " + t.getTitle() + " (Due: " + due + ")");
+            String cat = (t.getCategoryId() == null) ? "-" : t.getCategoryId().toString();
+            System.out.println("#" + t.getId() + " [" + t.getStatus() + "] " + t.getTitle()
+                    + " (Due: " + due + ", CategoryId: " + cat + ")");
         }
     }
 

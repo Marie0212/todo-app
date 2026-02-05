@@ -6,6 +6,7 @@
 /Users/mohammedalialadani/todo-app/src/main/java/de/todoapp/persistence/CategoryWriter.java
 /Users/mohammedalialadani/todo-app/src/main/java/de/todoapp/persistence/InMemoryCategoryRepository.java
 /Users/mohammedalialadani/todo-app/src/main/java/de/todoapp/persistence/InMemoryTaskRepository.java
+/Users/mohammedalialadani/todo-app/src/main/java/de/todoapp/persistence/SQLiteTaskRepository.java
 /Users/mohammedalialadani/todo-app/src/main/java/de/todoapp/persistence/TaskDeleter.java
 /Users/mohammedalialadani/todo-app/src/main/java/de/todoapp/persistence/TaskReader.java
 /Users/mohammedalialadani/todo-app/src/main/java/de/todoapp/persistence/TaskUpdater.java

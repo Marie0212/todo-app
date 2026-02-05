@@ -131,6 +131,11 @@ public class ConsoleApp {
         System.out.println("=== Aufgabenliste ===");
         for (Task t : tasks) {
             String due = (t.getDueDate() == null) ? "-" : t.getDueDate().toString();
+<<<<<<< HEAD
+            String cat = (t.getCategoryId() == null) ? "-" : t.getCategoryId().toString();
+            System.out.println("#" + t.getId() + " [" + t.getStatus() + "] " + t.getTitle()
+                    + " (Due: " + due + ", CategoryId: " + cat + ")");
+=======
             String cat = (t.getCategory() == null) ? "-" : t.getCategory();
 
             // ✅ US-10: OVERDUE-Markierung
@@ -143,6 +148,7 @@ public class ConsoleApp {
                     " (Due: " + due + ", Category: " + cat + ")" +
                     overdue
             );
+>>>>>>> origin/main
         }
     }
 

@@ -2,7 +2,5 @@ target/
 .idea/
 *.iml
 .DS_Store
-
-# SQLite DB
-data/todo.db
 .vscode/
+data/todo.db

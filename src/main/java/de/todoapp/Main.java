@@ -1,31 +1,20 @@
 package de.todoapp;
 
 import de.todoapp.persistence.InMemoryCategoryRepository;
-import de.todoapp.persistence.InMemoryTaskRepository;
+import de.todoapp.persistence.SQLiteTaskRepository;
 import de.todoapp.presentation.ConsoleApp;
 import de.todoapp.service.CategoryService;
 import de.todoapp.service.TaskService;
 
 public class Main {
-
     public static void main(String[] args) {
+        var taskRepo = new SQLiteTaskRepository("jdbc:sqlite:data/todo.db");
+        var taskService = new TaskService(taskRepo, taskRepo, taskRepo, taskRepo);
 
-        // Repos
-        InMemoryTaskRepository taskRepo = new InMemoryTaskRepository();
-        InMemoryCategoryRepository categoryRepo = new InMemoryCategoryRepository();
+        var categoryRepo = new InMemoryCategoryRepository();
+        var categoryService = new CategoryService(categoryRepo, categoryRepo);
 
-        // Services
-        TaskService taskService = new TaskService(taskRepo, taskRepo, taskRepo, taskRepo);
-        CategoryService categoryService = new CategoryService(categoryRepo, categoryRepo);
-
-        // App (genau 4 Parameter, wie der Compiler es verlangt)
-        ConsoleApp app = new ConsoleApp(
-                taskService,      // TaskCommandService
-                taskService,      // TaskQueryService
-                categoryService,  // CategoryCommandService
-                categoryService   // CategoryQueryService
-        );
-
+        var app = new ConsoleApp(taskService, taskService, categoryService, categoryService);
         app.run();
     }
 }

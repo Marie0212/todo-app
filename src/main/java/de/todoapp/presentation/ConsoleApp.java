@@ -86,9 +86,37 @@ public class ConsoleApp {
                 System.out.println("Ungültiges Datum. Wird ignoriert.");
             }
         }
+        // ===== Kategorie auswählbar machen =====
+        String category = null;
+
+        // vorhandene Kategorien anzeigen
+        List<Category> categories = categoryQueryService.listCategories();
+        if (!categories.isEmpty()) {
+            System.out.println("=== Verfügbare Kategorien ===");
+            for (Category c : categories) {
+                System.out.println("#" + c.getId() + " " + c.getName());
+            }
+        } 
+
+        System.out.print("Kategorie (Name eingeben oder leer): ");
+        String catRaw = sc.nextLine().trim();
+
+        if (!catRaw.isEmpty()) {
+            var existing = categories.stream()
+            .filter(c -> c.getName().equalsIgnoreCase(catRaw))
+            .findFirst();
+
+            if (existing.isPresent()) {
+                category = existing.get().getName();
+            } else {
+                Category createdCat = categoryCommandService.addCategory(catRaw);
+                category = createdCat.getName();
+            }
+        }
+
 
         try {
-            Task created = taskCommandService.addTask(title, description, dueDate);
+            Task created = taskCommandService.addTask(title, description, dueDate, category);
             System.out.println("✅ Aufgabe angelegt: #" + created.getId() + " " + created.getTitle());
         } catch (IllegalArgumentException e) {
             System.out.println("❌ Fehler: " + e.getMessage());
@@ -131,25 +159,19 @@ public class ConsoleApp {
         System.out.println("=== Aufgabenliste ===");
         for (Task t : tasks) {
             String due = (t.getDueDate() == null) ? "-" : t.getDueDate().toString();
-<<<<<<< HEAD
-            String cat = (t.getCategoryId() == null) ? "-" : t.getCategoryId().toString();
-            System.out.println("#" + t.getId() + " [" + t.getStatus() + "] " + t.getTitle()
-                    + " (Due: " + due + ", CategoryId: " + cat + ")");
-=======
             String cat = (t.getCategory() == null) ? "-" : t.getCategory();
 
-            // ✅ US-10: OVERDUE-Markierung
             String overdue = t.isOverdue() ? " ⚠ OVERDUE" : "";
 
             System.out.println(
-                    "#" + t.getId() +
-                    " [" + t.getStatus() + "] " +
-                    t.getTitle() +
-                    " (Due: " + due + ", Category: " + cat + ")" +
-                    overdue
+                "#" + t.getId() +
+                " [" + t.getStatus() + "] " +
+                t.getTitle() +
+                " (Due: " + due + ", Category: " + cat + ")" +
+                overdue
             );
->>>>>>> origin/main
         }
+
     }
 
     private void markDoneFlow(Scanner sc) {

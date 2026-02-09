@@ -25,16 +25,16 @@ public class TaskService implements TaskCommandService, TaskQueryService {
     }
 
     @Override
-    public Task addTask(String title, String description, LocalDate dueDate) {
-        long nextId = reader.findAll().stream()
-                .mapToLong(Task::getId)
-                .max()
-                .orElse(0L) + 1;
+    public Task addTask(String title, String description, LocalDate dueDate, String category) {
+    long nextId = reader.findAll().stream()
+            .mapToLong(Task::getId)
+            .max()
+            .orElse(0L) + 1;
 
-        // US-09 Task hat (id, title, description, dueDate, status, category)
-        Task task = new Task(nextId, title, description, dueDate, TaskStatus.OPEN, null);
+        Task task = new Task(nextId, title, description, dueDate, TaskStatus.OPEN, category);
         return writer.save(task);
     }
+
 
     @Override
     public void markDone(long id) {

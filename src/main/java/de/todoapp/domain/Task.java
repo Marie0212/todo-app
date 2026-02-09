@@ -9,7 +9,7 @@ public class Task {
     private final String description;
     private final LocalDate dueDate;
     private final TaskStatus status;
-    private final String category; // optional
+    private final String category; 
 
     public Task(long id, String title, String description, LocalDate dueDate, TaskStatus status, String category) {
         if (title == null || title.trim().isEmpty()) {

@@ -20,7 +20,6 @@ public class SQLiteTaskRepository implements TaskWriter, TaskReader, TaskUpdater
     }
 
     private void init() {
-        // LocalDate speichern wir als ISO-String (YYYY-MM-DD) in TEXT
         String sql = """
             CREATE TABLE IF NOT EXISTS tasks (
               id          INTEGER PRIMARY KEY,
@@ -28,9 +27,10 @@ public class SQLiteTaskRepository implements TaskWriter, TaskReader, TaskUpdater
               description TEXT,
               due_date    TEXT,
               status      TEXT NOT NULL,
-              category_id INTEGER
+              category_id TEXT
             );
             """;
+
         try (Connection c = DriverManager.getConnection(url);
              Statement st = c.createStatement()) {
             st.execute(sql);
@@ -41,7 +41,7 @@ public class SQLiteTaskRepository implements TaskWriter, TaskReader, TaskUpdater
 
     @Override
     public Task save(Task task) {
-        // InMemory.save überschreibt immer -> wir machen Upsert
+
         String sql = """
             INSERT INTO tasks(id, title, description, due_date, status, category_id)
             VALUES (?, ?, ?, ?, ?, ?)
@@ -67,6 +67,7 @@ public class SQLiteTaskRepository implements TaskWriter, TaskReader, TaskUpdater
 
     @Override
     public List<Task> findAll() {
+
         String sql = "SELECT id, title, description, due_date, status, category_id FROM tasks ORDER BY id";
         List<Task> tasks = new ArrayList<>();
 
@@ -86,7 +87,7 @@ public class SQLiteTaskRepository implements TaskWriter, TaskReader, TaskUpdater
 
     @Override
     public Optional<Task> update(Task task) {
-        // Muss Optional.empty() liefern, wenn id nicht existiert (wie InMemory)
+
         if (!exists(task.getId())) return Optional.empty();
 
         String sql = """
@@ -106,8 +107,14 @@ public class SQLiteTaskRepository implements TaskWriter, TaskReader, TaskUpdater
             ps.setString(2, task.getDescription());
             ps.setString(3, toDbDate(task.getDueDate()));
             ps.setString(4, task.getStatus().name());
-            if (task.getCategoryId() == null) ps.setNull(5, Types.BIGINT);
-            else ps.setLong(5, task.getCategoryId());
+
+            String cat = task.getCategory();
+            if (cat == null || cat.isBlank()) {
+                ps.setNull(5, Types.VARCHAR);
+            } else {
+                ps.setString(5, cat);
+            }
+
             ps.setLong(6, task.getId());
 
             ps.executeUpdate();
@@ -120,7 +127,9 @@ public class SQLiteTaskRepository implements TaskWriter, TaskReader, TaskUpdater
 
     @Override
     public Optional<Long> deleteById(long id) {
+
         String sql = "DELETE FROM tasks WHERE id=?";
+
         try (Connection c = DriverManager.getConnection(url);
              PreparedStatement ps = c.prepareStatement(sql)) {
 
@@ -133,32 +142,44 @@ public class SQLiteTaskRepository implements TaskWriter, TaskReader, TaskUpdater
         }
     }
 
-    // -------- helpers --------
+    // ---------------- HELPER ----------------
 
     private boolean exists(long id) {
+
         String sql = "SELECT 1 FROM tasks WHERE id=? LIMIT 1";
+
         try (Connection c = DriverManager.getConnection(url);
              PreparedStatement ps = c.prepareStatement(sql)) {
+
             ps.setLong(1, id);
+
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next();
             }
+
         } catch (SQLException e) {
             throw new RuntimeException("Exists check failed", e);
         }
     }
 
     private void bindTask(PreparedStatement ps, Task task) throws SQLException {
+
         ps.setLong(1, task.getId());
         ps.setString(2, task.getTitle());
         ps.setString(3, task.getDescription());
         ps.setString(4, toDbDate(task.getDueDate()));
         ps.setString(5, task.getStatus().name());
-        if (task.getCategoryId() == null) ps.setNull(6, Types.BIGINT);
-        else ps.setLong(6, task.getCategoryId());
+
+        String cat = task.getCategory();
+        if (cat == null || cat.isBlank()) {
+            ps.setNull(6, Types.VARCHAR);
+        } else {
+            ps.setString(6, cat);
+        }
     }
 
     private Task mapTask(ResultSet rs) throws SQLException {
+
         long id = rs.getLong("id");
         String title = rs.getString("title");
         String description = rs.getString("description");
@@ -167,12 +188,13 @@ public class SQLiteTaskRepository implements TaskWriter, TaskReader, TaskUpdater
         LocalDate dueDate = (due == null || due.isBlank()) ? null : LocalDate.parse(due);
 
         String statusStr = rs.getString("status");
-        TaskStatus status = (statusStr == null) ? TaskStatus.OPEN : TaskStatus.valueOf(statusStr);
+        TaskStatus status = (statusStr == null)
+                ? TaskStatus.OPEN
+                : TaskStatus.valueOf(statusStr);
 
-        long cat = rs.getLong("category_id");
-        Long categoryId = rs.wasNull() ? null : cat;
+        String category = rs.getString("category_id");
 
-        return new Task(id, title, description, dueDate, status, categoryId);
+        return new Task(id, title, description, dueDate, status, category);
     }
 
     private String toDbDate(LocalDate d) {

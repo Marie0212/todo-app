@@ -11,9 +11,9 @@ class TaskServiceDoneTest {
     @Test
     void markDone_setsStatusToDone() {
         var repo = new InMemoryTaskRepository();
-        var service = new TaskService(repo, repo, repo);
+        var service = new TaskService(repo, repo, repo, repo);
 
-        var t = service.addTask("Test", null, null);
+        var t = service.addTask("Test", "", null, "MEDIUM");
         service.markDone(t.getId());
 
         var tasks = service.listTasks();

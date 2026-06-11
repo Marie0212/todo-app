@@ -20,9 +20,21 @@ public class CategoryService implements CategoryCommandService, CategoryQuerySer
 
     @Override
     public Category addCategory(String name) {
-        long id = idSeq.incrementAndGet();
-        var category = new Category(id, name);
-        return writer.save(category);
+    String trimmedName = name == null ? "" : name.trim();
+
+    if (trimmedName.isEmpty()) {
+        throw new IllegalArgumentException("Kategorie-Name darf nicht leer sein.");
+    }
+
+    for (Category existingCategory : reader.findAll()) {
+        if (existingCategory.getName().equalsIgnoreCase(trimmedName)) {
+            return existingCategory;
+        }
+    }
+
+    long id = idSeq.incrementAndGet();
+    var category = new Category(id, trimmedName);
+    return writer.save(category);
     }
 
     @Override

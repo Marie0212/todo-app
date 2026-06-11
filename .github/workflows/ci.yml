@@ -1,0 +1,32 @@
+﻿name: Continuous Integration
+
+on:
+  push:
+    branches:
+      - main
+      - integrate/us01-us09
+  pull_request:
+    branches:
+      - main
+      - integrate/us01-us09
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Build and test with Maven
+        run: mvn -B clean verify

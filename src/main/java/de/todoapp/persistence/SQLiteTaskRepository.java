@@ -2,14 +2,30 @@ package de.todoapp.persistence;
 
 import de.todoapp.domain.Task;
 import de.todoapp.domain.TaskStatus;
+import org.jooq.DSLContext;
+import org.jooq.Field;
+import org.jooq.Record;
+import org.jooq.SQLDialect;
+import org.jooq.Table;
+import org.jooq.impl.DSL;
+import org.jooq.impl.SQLDataType;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 public class SQLiteTaskRepository implements TaskWriter, TaskReader, TaskUpdater, TaskDeleter {
+
+    private static final Table<?> TASKS = DSL.table(DSL.name("tasks"));
+
+    private static final Field<Long> ID = DSL.field(DSL.name("id"), Long.class);
+    private static final Field<String> TITLE = DSL.field(DSL.name("title"), String.class);
+    private static final Field<String> DESCRIPTION = DSL.field(DSL.name("description"), String.class);
+    private static final Field<String> DUE_DATE = DSL.field(DSL.name("due_date"), String.class);
+    private static final Field<String> STATUS = DSL.field(DSL.name("status"), String.class);
+    private static final Field<String> CATEGORY_ID = DSL.field(DSL.name("category_id"), String.class);
 
     private final String url;
 
@@ -20,184 +36,116 @@ public class SQLiteTaskRepository implements TaskWriter, TaskReader, TaskUpdater
     }
 
     private void init() {
-        String sql = """
-            CREATE TABLE IF NOT EXISTS tasks (
-              id          INTEGER PRIMARY KEY,
-              title       TEXT NOT NULL,
-              description TEXT,
-              due_date    TEXT,
-              status      TEXT NOT NULL,
-              category_id TEXT
-            );
-            """;
-
-        try (Connection c = DriverManager.getConnection(url);
-             Statement st = c.createStatement()) {
-            st.execute(sql);
-        } catch (SQLException e) {
-            throw new RuntimeException("DB init failed", e);
-        }
+        withContext(ctx -> {
+            ctx.createTableIfNotExists(TASKS)
+                    .column(ID, SQLDataType.BIGINT.nullable(false))
+                    .column(TITLE, SQLDataType.VARCHAR.nullable(false))
+                    .column(DESCRIPTION, SQLDataType.VARCHAR)
+                    .column(DUE_DATE, SQLDataType.VARCHAR)
+                    .column(STATUS, SQLDataType.VARCHAR.nullable(false))
+                    .column(CATEGORY_ID, SQLDataType.VARCHAR)
+                    .constraints(DSL.constraint("pk_tasks").primaryKey(ID))
+                    .execute();
+            return null;
+        });
     }
 
     @Override
     public Task save(Task task) {
+        withContext(ctx -> {
+            ctx.insertInto(TASKS, ID, TITLE, DESCRIPTION, DUE_DATE, STATUS, CATEGORY_ID)
+                    .values(
+                            task.getId(),
+                            task.getTitle(),
+                            task.getDescription(),
+                            toDbDate(task.getDueDate()),
+                            task.getStatus().name(),
+                            task.getCategory()
+                    )
+                    .onConflict(ID)
+                    .doUpdate()
+                    .set(TITLE, task.getTitle())
+                    .set(DESCRIPTION, task.getDescription())
+                    .set(DUE_DATE, toDbDate(task.getDueDate()))
+                    .set(STATUS, task.getStatus().name())
+                    .set(CATEGORY_ID, task.getCategory())
+                    .execute();
+            return null;
+        });
 
-        String sql = """
-            INSERT INTO tasks(id, title, description, due_date, status, category_id)
-            VALUES (?, ?, ?, ?, ?, ?)
-            ON CONFLICT(id) DO UPDATE SET
-              title=excluded.title,
-              description=excluded.description,
-              due_date=excluded.due_date,
-              status=excluded.status,
-              category_id=excluded.category_id
-            """;
-
-        try (Connection c = DriverManager.getConnection(url);
-             PreparedStatement ps = c.prepareStatement(sql)) {
-
-            bindTask(ps, task);
-            ps.executeUpdate();
-            return task;
-
-        } catch (SQLException e) {
-            throw new RuntimeException("Save failed", e);
-        }
+        return task;
     }
 
     @Override
     public List<Task> findAll() {
-
-        String sql = "SELECT id, title, description, due_date, status, category_id FROM tasks ORDER BY id";
-        List<Task> tasks = new ArrayList<>();
-
-        try (Connection c = DriverManager.getConnection(url);
-             PreparedStatement ps = c.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-
-            while (rs.next()) {
-                tasks.add(mapTask(rs));
-            }
-            return tasks;
-
-        } catch (SQLException e) {
-            throw new RuntimeException("FindAll failed", e);
-        }
+        return withContext(ctx ->
+                ctx.select(ID, TITLE, DESCRIPTION, DUE_DATE, STATUS, CATEGORY_ID)
+                        .from(TASKS)
+                        .orderBy(ID)
+                        .fetch(this::mapTask)
+        );
     }
 
     @Override
     public Optional<Task> update(Task task) {
+        int affected = withContext(ctx ->
+                ctx.update(TASKS)
+                        .set(TITLE, task.getTitle())
+                        .set(DESCRIPTION, task.getDescription())
+                        .set(DUE_DATE, toDbDate(task.getDueDate()))
+                        .set(STATUS, task.getStatus().name())
+                        .set(CATEGORY_ID, task.getCategory())
+                        .where(ID.eq(task.getId()))
+                        .execute()
+        );
 
-        if (!exists(task.getId())) return Optional.empty();
-
-        String sql = """
-            UPDATE tasks
-               SET title=?,
-                   description=?,
-                   due_date=?,
-                   status=?,
-                   category_id=?
-             WHERE id=?
-            """;
-
-        try (Connection c = DriverManager.getConnection(url);
-             PreparedStatement ps = c.prepareStatement(sql)) {
-
-            ps.setString(1, task.getTitle());
-            ps.setString(2, task.getDescription());
-            ps.setString(3, toDbDate(task.getDueDate()));
-            ps.setString(4, task.getStatus().name());
-
-            String cat = task.getCategory();
-            if (cat == null || cat.isBlank()) {
-                ps.setNull(5, Types.VARCHAR);
-            } else {
-                ps.setString(5, cat);
-            }
-
-            ps.setLong(6, task.getId());
-
-            ps.executeUpdate();
-            return Optional.of(task);
-
-        } catch (SQLException e) {
-            throw new RuntimeException("Update failed", e);
-        }
+        return affected > 0 ? Optional.of(task) : Optional.empty();
     }
 
     @Override
     public Optional<Long> deleteById(long id) {
+        int affected = withContext(ctx ->
+                ctx.deleteFrom(TASKS)
+                        .where(ID.eq(id))
+                        .execute()
+        );
 
-        String sql = "DELETE FROM tasks WHERE id=?";
-
-        try (Connection c = DriverManager.getConnection(url);
-             PreparedStatement ps = c.prepareStatement(sql)) {
-
-            ps.setLong(1, id);
-            int affected = ps.executeUpdate();
-            return affected > 0 ? Optional.of(id) : Optional.empty();
-
-        } catch (SQLException e) {
-            throw new RuntimeException("Delete failed", e);
-        }
+        return affected > 0 ? Optional.of(id) : Optional.empty();
     }
 
-    // ---------------- HELPER ----------------
+    private Task mapTask(Record record) {
+        Long id = record.get(ID);
+        String title = record.get(TITLE);
+        String description = record.get(DESCRIPTION);
 
-    private boolean exists(long id) {
-
-        String sql = "SELECT 1 FROM tasks WHERE id=? LIMIT 1";
-
-        try (Connection c = DriverManager.getConnection(url);
-             PreparedStatement ps = c.prepareStatement(sql)) {
-
-            ps.setLong(1, id);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                return rs.next();
-            }
-
-        } catch (SQLException e) {
-            throw new RuntimeException("Exists check failed", e);
-        }
-    }
-
-    private void bindTask(PreparedStatement ps, Task task) throws SQLException {
-
-        ps.setLong(1, task.getId());
-        ps.setString(2, task.getTitle());
-        ps.setString(3, task.getDescription());
-        ps.setString(4, toDbDate(task.getDueDate()));
-        ps.setString(5, task.getStatus().name());
-
-        String cat = task.getCategory();
-        if (cat == null || cat.isBlank()) {
-            ps.setNull(6, Types.VARCHAR);
-        } else {
-            ps.setString(6, cat);
-        }
-    }
-
-    private Task mapTask(ResultSet rs) throws SQLException {
-
-        long id = rs.getLong("id");
-        String title = rs.getString("title");
-        String description = rs.getString("description");
-
-        String due = rs.getString("due_date");
+        String due = record.get(DUE_DATE);
         LocalDate dueDate = (due == null || due.isBlank()) ? null : LocalDate.parse(due);
 
-        String statusStr = rs.getString("status");
-        TaskStatus status = (statusStr == null)
+        String statusValue = record.get(STATUS);
+        TaskStatus status = (statusValue == null || statusValue.isBlank())
                 ? TaskStatus.OPEN
-                : TaskStatus.valueOf(statusStr);
+                : TaskStatus.valueOf(statusValue);
 
-        String category = rs.getString("category_id");
+        String category = record.get(CATEGORY_ID);
 
         return new Task(id, title, description, dueDate, status, category);
     }
 
-    private String toDbDate(LocalDate d) {
-        return d == null ? null : d.toString();
+    private String toDbDate(LocalDate date) {
+        return date == null ? null : date.toString();
+    }
+
+    private <T> T withContext(JooqOperation<T> operation) {
+        try (Connection connection = DriverManager.getConnection(url)) {
+            DSLContext ctx = DSL.using(connection, SQLDialect.SQLITE);
+            return operation.execute(ctx);
+        } catch (Exception e) {
+            throw new RuntimeException("jOOQ task database operation failed", e);
+        }
+    }
+
+    @FunctionalInterface
+    private interface JooqOperation<T> {
+        T execute(DSLContext ctx);
     }
 }

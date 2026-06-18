@@ -1,12 +1,24 @@
 package de.todoapp.persistence;
 
 import de.todoapp.domain.Category;
+import org.jooq.DSLContext;
+import org.jooq.Field;
+import org.jooq.Record;
+import org.jooq.SQLDialect;
+import org.jooq.Table;
+import org.jooq.impl.DSL;
+import org.jooq.impl.SQLDataType;
 
-import java.sql.*;
-import java.util.ArrayList;
+import java.sql.Connection;
+import java.sql.DriverManager;
 import java.util.List;
 
 public class SQLiteCategoryRepository implements CategoryWriter, CategoryReader {
+
+    private static final Table<?> CATEGORIES = DSL.table(DSL.name("categories"));
+
+    private static final Field<Long> ID = DSL.field(DSL.name("id"), Long.class);
+    private static final Field<String> NAME = DSL.field(DSL.name("name"), String.class);
 
     private final String url;
 
@@ -17,61 +29,62 @@ public class SQLiteCategoryRepository implements CategoryWriter, CategoryReader 
     }
 
     private void init() {
-        String sql = """
-            CREATE TABLE IF NOT EXISTS categories (
-              id   INTEGER PRIMARY KEY,
-              name TEXT NOT NULL UNIQUE
-            );
-            """;
-
-        try (Connection c = DriverManager.getConnection(url);
-             Statement st = c.createStatement()) {
-            st.execute(sql);
-        } catch (SQLException e) {
-            throw new RuntimeException("Category DB init failed", e);
-        }
+        withContext(ctx -> {
+            ctx.createTableIfNotExists(CATEGORIES)
+                    .column(ID, SQLDataType.BIGINT.nullable(false))
+                    .column(NAME, SQLDataType.VARCHAR.nullable(false))
+                    .constraints(
+                            DSL.constraint("pk_categories").primaryKey(ID),
+                            DSL.constraint("uq_categories_name").unique(NAME)
+                    )
+                    .execute();
+            return null;
+        });
     }
 
     @Override
     public Category save(Category category) {
+        withContext(ctx -> {
+            ctx.insertInto(CATEGORIES, ID, NAME)
+                    .values(category.getId(), category.getName())
+                    .onConflict(ID)
+                    .doUpdate()
+                    .set(NAME, category.getName())
+                    .execute();
+            return null;
+        });
 
-        String sql = """
-            INSERT INTO categories(id, name)
-            VALUES (?, ?)
-            ON CONFLICT(id) DO UPDATE SET
-              name = excluded.name
-            """;
-
-        try (Connection c = DriverManager.getConnection(url);
-             PreparedStatement ps = c.prepareStatement(sql)) {
-
-            ps.setLong(1, category.getId());
-            ps.setString(2, category.getName());
-            ps.executeUpdate();
-            return category;
-
-        } catch (SQLException e) {
-            throw new RuntimeException("Save category failed", e);
-        }
+        return category;
     }
 
     @Override
     public List<Category> findAll() {
-        String sql = "SELECT id, name FROM categories ORDER BY id";
-        List<Category> out = new ArrayList<>();
+        return withContext(ctx ->
+                ctx.select(ID, NAME)
+                        .from(CATEGORIES)
+                        .orderBy(ID)
+                        .fetch(this::mapCategory)
+        );
+    }
 
-        try (Connection c = DriverManager.getConnection(url);
-             PreparedStatement ps = c.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+    private Category mapCategory(Record record) {
+        Long id = record.get(ID);
+        String name = record.get(NAME);
 
-            while (rs.next()) {
-                out.add(new Category(rs.getLong("id"), rs.getString("name")));
-            }
+        return new Category(id, name);
+    }
 
-            return out;
-
-        } catch (SQLException e) {
-            throw new RuntimeException("FindAll categories failed", e);
+    private <T> T withContext(JooqOperation<T> operation) {
+        try (Connection connection = DriverManager.getConnection(url)) {
+            DSLContext ctx = DSL.using(connection, SQLDialect.SQLITE);
+            return operation.execute(ctx);
+        } catch (Exception e) {
+            throw new RuntimeException("jOOQ category database operation failed", e);
         }
+    }
+
+    @FunctionalInterface
+    private interface JooqOperation<T> {
+        T execute(DSLContext ctx);
     }
 }

@@ -1,80 +1,124 @@
-# 📝 Todo-App (Java)
-
-Eine konsolenbasierte **Todo-App in Java 21**, die Aufgaben (**Tasks**) und **Kategorien** verwaltet.  
-Die Anwendung ist klar in **Domain-, Service-, Persistence- und Presentation-Schicht** gegliedert und unterstützt sowohl **In-Memory-** als auch **SQLite-Persistenz**.  
-Die Business-Logik ist mit **JUnit 5** getestet.
-
----
-
 ## ✨ Features
 
-- Aufgaben (**Tasks**) anlegen, anzeigen, bearbeiten und löschen
-- Aufgabenstatus verwalten (`OPEN`, `DONE`, …)
-- Kategorien für Tasks
-- Persistenz:
-  - **In-Memory** (für Tests & Entwicklung)
-  - **SQLite** (produktive Speicherung)
+- Aufgaben anlegen und anzeigen
+- Aufgaben als erledigt markieren
+- Aufgaben löschen
+- Aufgaben nach Kriterien filtern
+- Kategorien anlegen und anzeigen
+- Kategorien Aufgaben zuordnen
+- Dauerhafte Speicherung in einer SQLite-Datenbank
+- In-Memory-Repositories für Tests
 - Konsolenbasierte Benutzeroberfläche
-- Saubere Trennung von Fachlogik, Persistenz und Ein-/Ausgabe
-- Unit-Tests für die Service-Schicht
+- Klare Trennung von Domain, Service, Persistence und Presentation
+- Automatisierte Tests mit JUnit 5
+- Automatische Prüfung durch GitHub Actions
 
 ---
 
 ## 🧱 Architektur
 
-Die Anwendung folgt einer **Schichtenarchitektur** mit klaren Zuständigkeiten:
-
+Die Anwendung folgt einer Schichtenarchitektur mit klaren Zuständigkeiten.
 
 ### Domain (`domain`)
-Fachliche Modelle ohne Abhängigkeiten:
+
+Enthält die fachlichen Modelle:
+
 - `Task`
 - `Category`
 - `TaskStatus`
 
 ### Service (`service`)
-Geschäftslogik und Use-Cases:
-- Auflisten von Tasks
-- Abschließen von Tasks
-- Fachliche Regeln
+
+Enthält die Geschäftslogik und Anwendungsfälle:
+
+- Aufgaben anlegen und auflisten
+- Aufgaben als erledigt markieren
+- Aufgaben löschen
+- Kategorien verwalten
+- Eingaben validieren
 
 ### Persistence (`persistence`)
-Zugriff auf den Speicher:
-- SQLite-Repositories
-- In-Memory-Repositories (für Tests)
-- Reader / Writer / Updater / Deleter
+
+Enthält den Zugriff auf die gespeicherten Daten:
+
+- SQLite-Repositories für die dauerhafte Speicherung
+- jOOQ für Datenbankabfragen und Datenbankoperationen
+- In-Memory-Repositories für automatisierte Tests
+- Reader-, Writer-, Updater- und Deleter-Schnittstellen
+
+Die Verbindung zur SQLite-Datenbank wird über den SQLite-JDBC-Treiber hergestellt. Die SQL-Operationen werden über die jOOQ-API ausgeführt.
 
 ### Presentation (`presentation`)
-Konsolenbasierte Benutzeroberfläche:
+
+Enthält die konsolenbasierte Benutzeroberfläche:
+
 - `ConsoleApp`
-- `ConsoleInput` / `ConsoleOutput`
-- Abstraktionen `Input` / `Output`
+- `ConsoleInput`
+- `ConsoleOutput`
+- Abstraktionen `Input` und `Output`
 
 ### Einstiegspunkt
+
 - `Main.java`
-
----
-
-## 📁 Projektstruktur
-
 
 ---
 
 ## 🛠️ Tech-Stack
 
-- **Java:** 21  
-- **Build-Tool:** Maven  
-- **Datenbank:** SQLite  
-- **Persistenz:** JDBC (`sqlite-jdbc`)  
-- **Tests:** JUnit 5  
+- **Java:** 21
+- **Build-Tool:** Maven
+- **Datenbank:** SQLite
+- **Datenbankzugriff:** jOOQ
+- **Datenbanktreiber:** SQLite JDBC
+- **Tests:** JUnit 5
+- **Continuous Integration:** GitHub Actions 
+
+## 🚀 Anwendung starten
+
+Das Projekt kann mit Maven gestartet werden:
+
+```bash
+mvn exec:java
+```
+
+Anschließend erscheint das Konsolenmenü:
+
+```text
+1) Aufgabe anlegen
+2) Aufgaben anzeigen
+3) Aufgabe erledigen
+4) Aufgabe löschen
+5) Kategorie anlegen
+6) Kategorien anzeigen
+0) Beenden
+```
+
+Die SQLite-Datenbank wird im Verzeichnis `data` gespeichert.
 
 ---
 
-## ✅ Voraussetzungen
+## 🧪 Tests ausführen
 
-- JDK 21
-- Maven
+Alle automatisierten Tests werden mit folgendem Befehl ausgeführt:
 
-Überprüfen:
 ```bash
-java -version
-mvn -version
+mvn clean test
+```
+
+Aktuell enthält das Projekt sechs automatisierte Tests.
+
+Ein erfolgreicher Testlauf endet beispielsweise mit:
+
+```text
+Tests run: 6, Failures: 0, Errors: 0, Skipped: 0
+BUILD SUCCESS
+```
+
+Der vollständige Maven-Build kann so geprüft werden:
+
+```bash
+mvn clean verify
+```
+
+Zusätzlich führt GitHub Actions die Tests bei Änderungen am Repository automatisch aus.
+

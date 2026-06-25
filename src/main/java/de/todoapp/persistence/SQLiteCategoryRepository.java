@@ -47,9 +47,6 @@ public class SQLiteCategoryRepository implements CategoryWriter, CategoryReader 
         withContext(ctx -> {
             ctx.insertInto(CATEGORIES, ID, NAME)
                     .values(category.getId(), category.getName())
-                    .onConflict(ID)
-                    .doUpdate()
-                    .set(NAME, category.getName())
                     .execute();
             return null;
         });

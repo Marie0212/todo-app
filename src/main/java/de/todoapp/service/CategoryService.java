@@ -16,25 +16,34 @@ public class CategoryService implements CategoryCommandService, CategoryQuerySer
     public CategoryService(CategoryWriter writer, CategoryReader reader) {
         this.writer = writer;
         this.reader = reader;
+
+        long highestExistingId = reader.findAll().stream()
+                .mapToLong(Category::getId)
+                .max()
+                .orElse(0L);
+
+        idSeq.set(highestExistingId);
     }
 
     @Override
     public Category addCategory(String name) {
-    String trimmedName = name == null ? "" : name.trim();
+        String trimmedName = name == null ? "" : name.trim();
 
-    if (trimmedName.isEmpty()) {
-        throw new IllegalArgumentException("Kategorie-Name darf nicht leer sein.");
-    }
-
-    for (Category existingCategory : reader.findAll()) {
-        if (existingCategory.getName().equalsIgnoreCase(trimmedName)) {
-            return existingCategory;
+        if (trimmedName.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "Kategorie-Name darf nicht leer sein."
+            );
         }
-    }
 
-    long id = idSeq.incrementAndGet();
-    var category = new Category(id, trimmedName);
-    return writer.save(category);
+        for (Category existingCategory : reader.findAll()) {
+            if (existingCategory.getName().equalsIgnoreCase(trimmedName)) {
+                return existingCategory;
+            }
+        }
+
+        long id = idSeq.incrementAndGet();
+        Category category = new Category(id, trimmedName);
+        return writer.save(category);
     }
 
     @Override
